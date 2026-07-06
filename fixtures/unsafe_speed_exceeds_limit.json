@@ -1,0 +1,11 @@
+{
+  "_expect": "reject_safety",
+  "_note": "speed_mps=12 is inside the schema's 0.5-15 ceiling but above the configured safety max of 8 m/s.",
+  "mission_type": "route",
+  "repetitions": 1,
+  "speed_mps": 12,
+  "waypoints": [
+    {"lat": 10.5270, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.5272, "lon": 76.2142, "alt_m": 10}
+  ]
+}

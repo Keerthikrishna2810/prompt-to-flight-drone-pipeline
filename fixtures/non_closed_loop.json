@@ -1,0 +1,12 @@
+{
+  "_expect": "reject_safety",
+  "_note": "mission_type='loop' with 3 waypoints, but first and last are ~100m apart, well beyond the 15m loop closure tolerance.",
+  "mission_type": "loop",
+  "repetitions": 1,
+  "speed_mps": 5,
+  "waypoints": [
+    {"lat": 10.5270, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.5273, "lon": 76.2143, "alt_m": 10},
+    {"lat": 10.52789, "lon": 76.2140, "alt_m": 10}
+  ]
+}

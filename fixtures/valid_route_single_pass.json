@@ -1,0 +1,12 @@
+{
+  "_expect": "accept",
+  "_note": "Point-to-point route, no closure required, well within all limits.",
+  "mission_type": "route",
+  "repetitions": 1,
+  "speed_mps": 6,
+  "waypoints": [
+    {"lat": 10.5270, "lon": 76.2140, "alt_m": 8},
+    {"lat": 10.5272, "lon": 76.2142, "alt_m": 12},
+    {"lat": 10.5274, "lon": 76.2144, "alt_m": 15}
+  ]
+}

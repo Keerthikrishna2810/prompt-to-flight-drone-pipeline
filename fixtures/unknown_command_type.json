@@ -1,0 +1,11 @@
+{
+  "_expect": "reject_schema",
+  "_note": "mission_type 'hover' is not in the known-commands enum (loop, route).",
+  "mission_type": "hover",
+  "repetitions": 1,
+  "speed_mps": 5,
+  "waypoints": [
+    {"lat": 10.5270, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.5272, "lon": 76.2142, "alt_m": 10}
+  ]
+}

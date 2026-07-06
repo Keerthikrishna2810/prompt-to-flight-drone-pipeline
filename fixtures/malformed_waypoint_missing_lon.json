@@ -1,0 +1,11 @@
+{
+  "_expect": "reject_schema",
+  "_note": "Second waypoint is missing the required 'lon' field entirely.",
+  "mission_type": "route",
+  "repetitions": 1,
+  "speed_mps": 5,
+  "waypoints": [
+    {"lat": 10.5270, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.5272, "alt_m": 10}
+  ]
+}

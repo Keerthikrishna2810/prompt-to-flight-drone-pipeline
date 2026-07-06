@@ -1,0 +1,8 @@
+{
+  "_expect": "reject_schema",
+  "_note": "waypoints list is empty, violates schema's min_length=1.",
+  "mission_type": "route",
+  "repetitions": 1,
+  "speed_mps": 5,
+  "waypoints": []
+}

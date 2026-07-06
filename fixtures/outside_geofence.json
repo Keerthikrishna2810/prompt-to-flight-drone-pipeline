@@ -1,0 +1,11 @@
+{
+  "_expect": "reject_safety",
+  "_note": "Second waypoint is ~500m from home, beyond the configured 200m geofence radius, though the lat/lon values themselves are schema-valid.",
+  "mission_type": "route",
+  "repetitions": 1,
+  "speed_mps": 5,
+  "waypoints": [
+    {"lat": 10.5270, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.53149, "lon": 76.2140, "alt_m": 10}
+  ]
+}
