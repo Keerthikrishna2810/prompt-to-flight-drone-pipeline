@@ -46,8 +46,8 @@ fresh login session to take effect for some setups.
 First, get the code onto the machine:
 
 ```bash
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
+git clone https://github.com/Keerthikrishna2810/prompt-to-flight-drone-pipeline.git
+cd prompt-to-flight-drone-pipeline
 ```
 
 Then build the image:
