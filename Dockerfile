@@ -134,6 +134,12 @@ RUN cd /root/project && python3 test_main.py
 COPY fly.sh /root/project/fly.sh
 RUN chmod +x /root/project/fly.sh
 
+# Deterministic validator-rejection demo (no LLM involved) -- also serves
+# as a build-time regression check: if the safety validator ever starts
+# wrongly accepting an out-of-bounds mission, the build itself fails here.
+COPY demo_reject.py /root/project/demo_reject.py
+RUN cd /root/project && python3 demo_reject.py
+
 # Pull the local LLM model at build time so `docker run` doesn't need to
 # re-download it. Swap for whatever model you settle on.
 # (Left commented out for Day 1 -- uncomment once Ollama step is confirmed working,
