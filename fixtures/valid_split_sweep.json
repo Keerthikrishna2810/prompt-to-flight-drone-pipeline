@@ -1,0 +1,15 @@
+{
+  "_expect": "accept",
+  "_note": "3 drones splitting one perimeter into 3 contiguous lanes to sweep an area -- 'you three sweep this area' style instruction. Each lane shares its boundary waypoint with the next, so there's no coverage gap.",
+  "drone_count": 3,
+  "mode": "split",
+  "mission_type": "route",
+  "repetitions": 1,
+  "speed_mps": 5,
+  "waypoints": [
+    {"lat": 10.5270, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.5272, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.5274, "lon": 76.2142, "alt_m": 10},
+    {"lat": 10.5274, "lon": 76.2145, "alt_m": 10}
+  ]
+}

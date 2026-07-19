@@ -1,0 +1,15 @@
+{
+  "_expect": "accept",
+  "_note": "3 drones in a wedge, flying a short route together. Drone 0 (the point) flies exactly this route; drones 1 and 2 (the wings) are offset back and out by formation.py.",
+  "drone_count": 3,
+  "mode": "formation",
+  "formation": "wedge",
+  "spacing_m": 12.0,
+  "mission_type": "route",
+  "repetitions": 1,
+  "speed_mps": 5,
+  "waypoints": [
+    {"lat": 10.5270, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.5273, "lon": 76.2146, "alt_m": 10}
+  ]
+}

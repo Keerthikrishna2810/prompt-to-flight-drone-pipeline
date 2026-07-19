@@ -1,0 +1,18 @@
+{
+  "_expect": "accept",
+  "_note": "2 drones side by side (line abreast), patrolling the same closed loop together, offset perpendicular to travel.",
+  "drone_count": 2,
+  "mode": "formation",
+  "formation": "line",
+  "spacing_m": 10.0,
+  "mission_type": "loop",
+  "repetitions": 2,
+  "speed_mps": 5,
+  "waypoints": [
+    {"lat": 10.5270, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.52745, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.52745, "lon": 76.21446, "alt_m": 10},
+    {"lat": 10.5270, "lon": 76.21446, "alt_m": 10},
+    {"lat": 10.52701, "lon": 76.21401, "alt_m": 10}
+  ]
+}
