@@ -1,6 +1,6 @@
 # Extension Task Write-up
 
-## Challenge 1 -- Multi-agent formations (built, fully working, dry-run tested)
+## Challenge 1 -- Multi-agent formations (built, tested, verified live)
 
 Approach: keep the entire core pipeline (schema.py -> validator.py ->
 mission_executor.py) completely unchanged, and add a squad-level layer
@@ -44,13 +44,39 @@ above it.
 live PX4/Gazebo/Ollama session, same build-time-safe pattern the core task
 already established in its Dockerfile.
 
-**What's honestly unverified:** the multi-vehicle Gazebo spawn in
-`fly_squad.sh` and the RViz config were written against PX4's documented
-approach but not run live (no GPU/display available while building this).
-Everything downstream of "N PX4 instances are up on the right ports" --
-which is the part that actually matters for the multi-agent formations
-challenge -- is fully tested. See `fly_squad.sh`'s own header comment for
-the fallback if the Gazebo spawn needs adjusting for your PX4 checkout.
+**Verified live:** built the Docker image (PX4 v1.16.2 + Gazebo Harmonic +
+Ollama + qwen2.5:7b-instruct, all baked into the image so `docker run`
+needs no network for the model) and ran the full pipeline against 3 real
+PX4 SITL instances sharing one Gazebo world. Prompt: *"send three drones
+in a wedge down this route"*. The LLM interpreter produced valid squad
+JSON on the first attempt, `squad_validator.py` accepted it, and
+`squad_executor.py` connected to all 3 vehicles concurrently (ports
+14540-14542), armed, took off, flew each drone's independently-offset
+wedge route, and RTL'd -- all 3 audit logs show genuinely different
+per-drone waypoints, confirming `formation.py`'s offset math is correct
+against live vehicles, not just in the dry-run tests.
+
+Two real infrastructure issues came up getting there, both now fixed in
+`fly_squad.sh`:
+1. PX4's `Tools/simulation/gz/simulation-gazebo` script reads a
+   `--headless` CLI flag, not a `HEADLESS` environment variable -- the
+   first version of the script got this wrong, which crashed Gazebo's Qt
+   GUI against a nonexistent display and forced a slow internal restart.
+   Fixed by using the correct flag, and by making the script auto-detect
+   a live `DISPLAY` (so it runs the GUI when you actually want to watch,
+   headless otherwise).
+2. A `gz sim` world can start paused; PX4 will still connect, arm, and
+   accept every command successfully against a paused world, but the
+   simulated clock (and therefore vehicle position) never advances --
+   commands report success while nothing visibly moves. Fixed with an
+   explicit unpause call (`gz service ... --req 'pause: false'`) right
+   after the world starts.
+
+**69/69 unit/integration tests pass** (the original 22 plus 47 new), all
+runnable with no live PX4/Gazebo/Ollama session -- the build-time-safe
+pattern the core task established in its Dockerfile, which is what made
+debugging the two live-only issues above fast: everything except the
+final live-integration step was already known-good going in.
 
 **Scope choices made on purpose, not oversights:**
 - Formation alignment is fixed to the route's *first-leg* bearing, not
@@ -61,6 +87,15 @@ the fallback if the Gazebo spawn needs adjusting for your PX4 checkout.
   enforced as a live runtime guard during flight (e.g. if one drone drifts
   off course). That would need real-time cross-drone telemetry
   monitoring, a reasonable next addition.
+
+**What's tested but not yet watched live:** `SquadMode.SPLIT` (splitting
+one route into contiguous lanes across drones, for "sweep this area"
+style instructions) exercises the exact same validated-plan ->
+`fly_squad()` path as the wedge run above, and is covered by
+`test_squad_fixtures.py`, but the live run above only demoed `formation`
+mode. Likewise `formation_viz.py`'s RViz publishing is unit-tested
+(`test_squad_executor.py`'s viz tests) and wired into `fly_squad.sh`, but
+wasn't visually confirmed in an RViz window during this write-up.
 
 ## Challenge 2 -- SLAM / autonomous navigation (approach only)
 

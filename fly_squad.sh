@@ -56,12 +56,45 @@ fi
 
 # -- Gazebo server (shared world, no vehicle attached yet) ----------------
 if ! pgrep -f "gz sim" > /dev/null; then
-    echo "== Starting shared Gazebo world (headless) =="
+    # If a real X display is attached (DISPLAY is set), run WITH the GUI so
+    # you can watch the drones -- otherwise fall back to headless. This is
+    # the only difference between "I can see it in Gazebo" and "it just
+    # runs in the background" -- see the docker run flags in the README
+    # section below for how DISPLAY gets set in the first place.
+    if [ -n "$DISPLAY" ]; then
+        GZ_FLAGS=""
+        echo "== Starting shared Gazebo world (GUI -- DISPLAY=$DISPLAY detected) =="
+    else
+        GZ_FLAGS="--headless"
+        echo "== Starting shared Gazebo world (headless -- no DISPLAY detected) =="
+    fi
     cd /root/PX4-Autopilot
-    setsid bash -c "HEADLESS=1 python3 Tools/simulation/gz/simulation-gazebo" \
+    setsid bash -c "python3 Tools/simulation/gz/simulation-gazebo $GZ_FLAGS" \
         < /dev/null > /root/project/gz_server.log 2>&1 &
-    echo "== Waiting ~15s for Gazebo server =="
-    sleep 15
+    echo "== Waiting ~40s for Gazebo server (longer on first run -- it downloads vehicle models from GitHub the first time) =="
+    sleep 40
+
+    # Explicitly unpause the world clock. gz sim worlds can start paused;
+    # if that happens, PX4 will connect and accept every command
+    # successfully but the simulated clock (and therefore vehicle
+    # position) never advances -- every telemetry read comes back
+    # identical, which is exactly the "frozen drone" symptom this fixes.
+    # Discover the actual world name rather than assuming "default" -- it
+    # varies by PX4 version/world file, and guessing wrong fails the
+    # service call silently while leaving the world paused.
+    WORLD_NAME=""
+    for i in $(seq 1 15); do
+        WORLD_NAME=$(gz topic -l 2>/dev/null | grep -m1 -oP '(?<=^/world/)[^/]+(?=/clock$)')
+        [ -n "$WORLD_NAME" ] && break
+        sleep 1
+    done
+    WORLD_NAME="${WORLD_NAME:-default}"
+    echo "== Unpausing world '${WORLD_NAME}' =="
+    gz service -s /world/${WORLD_NAME}/control \
+        --reqtype gz.msgs.WorldControl --reptype gz.msgs.Boolean \
+        --timeout 5000 --req 'pause: false' \
+        || echo "== WARNING: unpause call to world '${WORLD_NAME}' failed -- run 'gz topic -l' yourself to find the real world name if drones still don't move =="
+
     cd /root/project
 else
     echo "== Gazebo world already running =="
@@ -96,11 +129,12 @@ if [ "$3" == "rviz" ]; then
     RVIZ_FLAG="--rviz"
     if ! pgrep -f "rviz2" > /dev/null; then
         echo "== Starting RViz (rviz/formation.rviz) =="
-        setsid ros2 run rviz2 rviz2 -d /root/project/rviz/formation.rviz \
+        setsid bash -c "source /opt/ros/humble/setup.bash && ros2 run rviz2 rviz2 -d /root/project/rviz/formation.rviz" \
             < /dev/null > /root/project/rviz.log 2>&1 &
         sleep 3
     fi
 fi
 
 echo "== Running full squad pipeline (${DRONE_COUNT} drones) =="
+source /opt/ros/humble/setup.bash 2>/dev/null
 python3 /root/project/squad_main.py "$PROMPT" --base-port 14540 $RVIZ_FLAG
