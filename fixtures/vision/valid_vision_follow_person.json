@@ -1,0 +1,15 @@
+{
+  "_expect": "accept",
+  "_note": "Search a short route for a person, follow at 8m standoff for up to 90s if found.",
+  "target_class": "person",
+  "search_waypoints": [
+    {"lat": 10.5270, "lon": 76.2140, "alt_m": 10},
+    {"lat": 10.5273, "lon": 76.2144, "alt_m": 10},
+    {"lat": 10.5276, "lon": 76.2148, "alt_m": 10}
+  ],
+  "search_speed_mps": 4,
+  "follow_distance_m": 8,
+  "follow_altitude_m": 10,
+  "max_follow_duration_s": 90,
+  "detection_confidence_threshold": 0.5
+}

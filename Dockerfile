@@ -141,6 +141,20 @@ COPY demo_reject.py /root/project/demo_reject.py
 RUN cd /root/project && python3 demo_reject.py
 
 # ---- Challenge 1 -- multi-agent formations ---------------------------------
+# Same "boring, unchanged core" principle as everything above: schema.py,
+# validator.py, mission_executor.py, llm_interpreter.py, main.py are not
+# touched by any file below. This adds a squad-level layer ON TOP of them:
+#   formation.py         -- pure geometry (line/wedge/column/box), no drone deps
+#   squad_schema.py       -- SquadPlan, the squad-level counterpart to MissionPlan
+#   squad_validator.py    -- expands a SquadPlan into N MissionPlans, runs each
+#                            through the unchanged single-drone pipeline, plus
+#                            a new minimum-separation check across drones
+#   squad_interpreter.py  -- same retry-with-feedback LLM pattern as
+#                            llm_interpreter.py, scoped to squad-level intent
+#   squad_executor.py     -- N MissionExecutors run concurrently, one per drone,
+#                            with a bounded per-drone connect timeout so one
+#                            stuck connection can never hang the whole squad
+#   squad_main.py          -- full pipeline wiring, mirrors main.py
 COPY formation.py /root/project/formation.py
 COPY squad_schema.py /root/project/squad_schema.py
 COPY squad_validator.py /root/project/squad_validator.py
@@ -174,6 +188,16 @@ COPY fly_squad.sh /root/project/fly_squad.sh
 RUN chmod +x /root/project/fly_squad.sh
 
 # ---- Optional -- ROS 2 Humble + RViz2, for watching the squad in RViz -----
+# NOT required for the squad pipeline itself -- Gazebo already shows every
+# simulated drone with zero extra setup (HEADLESS=0 in fly_squad.sh), same
+# as the core task's fly.sh. This block exists purely so formation_viz.py
+# (squad_executor.py's optional --rviz flag) has somewhere to publish to.
+#
+# If this block causes build trouble or costs too much time, it's safe to
+# comment out entirely: squad_executor.py's viz hook is designed to no-op
+# cleanly with a warning if formation_viz.py/rclpy can't be imported (see
+# squad_executor.py's run_squad_from_file / squad_main.py's use_rviz
+# handling) -- nothing about flying the squad depends on this succeeding.
 RUN apt-get update && apt-get install -y --no-install-recommends curl gnupg lsb-release \
     && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
         -o /usr/share/keyrings/ros-archive-keyring.gpg \
@@ -188,19 +212,79 @@ COPY formation_viz.py /root/project/formation_viz.py
 COPY rviz/ /root/project/rviz/
 
 # Pull the local LLM model at build time so `docker run` doesn't need to
-# re-download it. Safely terminates the background engine instance so the
-# Docker layer build context cleanly exits.
-RUN ollama serve & \
-    PID=$!; \
-    echo "Waiting for Ollama server to spin up..."; \
-    for i in $(seq 1 30); do \
-        if curl -s http://localhost:11434/api/tags > /dev/null; then \
-            echo "Ollama is ready!"; \
-            break; \
-        fi; \
-        sleep 2; \
-    done; \
-    ollama pull qwen2.5:7b-instruct; \
-    kill $PID
+# re-download it every time -- adds several GB to the image, but that's a
+# one-time build cost instead of a multi-minute wait (and a live network
+# dependency) on every single container start.
+RUN (ollama serve &) \
+    && for i in $(seq 1 30); do curl -s -o /dev/null http://localhost:11434/ && break; sleep 1; done \
+    && ollama pull qwen2.5:7b-instruct
+
+# ---- Challenge 3 -- vision AI target detection + follow ----------------
+# Same layering as Challenge 1: schema.py, validator.py,
+# mission_executor.py stay untouched. This adds a search-then-follow
+# layer that reuses the existing safety validator for its search route
+# and adds a new runtime geofence guard for the follow phase (see
+# vision_executor.py's module docstring for why that's the one place
+# this challenge needed a LIVE, not just pre-flight, safety check).
+#
+#   vision_schema.py            VisionFollowPlan -- target class + search route + follow params
+#   vision_detector.py           Pluggable detector interface, MockDetector, optional YoloDetector
+#   vision_follow_controller.py   Pure geometry: bounding box -> steering command
+#   vision_validator.py           Search route through the unchanged core safety pipeline
+#   vision_interpreter.py         Prompt -> VisionFollowPlan, same retry pattern as llm_interpreter.py
+#   vision_executor.py            Search + snapshot + BOUNDED follow loop (see its own docstring)
+#   vision_main.py                 Full pipeline wiring, mirrors main.py/squad_main.py
+#   vision_camera_gz.py            Live Gazebo camera bridge -- NOT verified live, see its docstring
+COPY vision_schema.py /root/project/vision_schema.py
+COPY vision_detector.py /root/project/vision_detector.py
+COPY vision_follow_controller.py /root/project/vision_follow_controller.py
+COPY vision_validator.py /root/project/vision_validator.py
+COPY vision_interpreter.py /root/project/vision_interpreter.py
+COPY vision_executor.py /root/project/vision_executor.py
+COPY vision_main.py /root/project/vision_main.py
+COPY vision_camera_gz.py /root/project/vision_camera_gz.py
+COPY vision_demo_reject.py /root/project/vision_demo_reject.py
+COPY test_vision_follow_controller.py /root/project/test_vision_follow_controller.py
+COPY test_vision_detector.py /root/project/test_vision_detector.py
+COPY test_vision_validator.py /root/project/test_vision_validator.py
+COPY test_vision_executor.py /root/project/test_vision_executor.py
+COPY test_vision_interpreter.py /root/project/test_vision_interpreter.py
+COPY test_vision_main.py /root/project/test_vision_main.py
+COPY test_vision_fixtures.py /root/project/test_vision_fixtures.py
+COPY fixtures/ /root/project/fixtures/
+
+# Every one of these tests is pure Python, mocked-detector, or dry-run --
+# no ultralytics/YOLO, no live camera, no live PX4/Gazebo needed. If the
+# follow-steering math, the search/follow branching, or the bounded-loop
+# safety property is ever broken, the build fails here.
+RUN cd /root/project \
+    && python3 test_vision_follow_controller.py \
+    && python3 test_vision_detector.py \
+    && python3 test_vision_validator.py \
+    && python3 test_vision_executor.py \
+    && python3 test_vision_interpreter.py \
+    && python3 test_vision_main.py \
+    && python3 test_vision_fixtures.py \
+    && python3 vision_demo_reject.py
+
+COPY fly_vision.sh /root/project/fly_vision.sh
+RUN chmod +x /root/project/fly_vision.sh
+
+# ---- Optional -- real detector + real camera bridge, for the live path --
+# NOT required for the vision pipeline's tested logic above -- everything
+# up to here already proves the search/detect/snapshot/follow behavior
+# correctly via MockDetector. This block only matters if you want
+# fly_vision.sh's "real" mode (actual YOLO inference on actual Gazebo
+# camera frames). If it slows the build too much or fails, it's safe to
+# comment out -- vision_main.py's --real-camera/--real-detector flags
+# fall back to the tested mock path automatically if either import fails
+# (see _build_camera_and_detector() in vision_main.py).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ros-humble-ros-gz-bridge ros-humble-cv-bridge \
+    && rm -rf /var/lib/apt/lists/* \
+    || echo "== WARNING: ros_gz_bridge/cv_bridge install failed -- live camera mode won't work, mock path still does =="
+
+RUN pip3 install --no-cache-dir ultralytics pillow \
+    || echo "== WARNING: ultralytics install failed -- live detector mode won't work, mock path still does =="
 
 CMD ["/bin/bash"]

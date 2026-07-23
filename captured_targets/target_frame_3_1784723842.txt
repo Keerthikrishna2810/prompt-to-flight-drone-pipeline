@@ -1,0 +1,4 @@
+=== HUMAN OPERATOR ALERT ===
+Detected Target Class: car
+Frame ID: 3
+Bounding Offset: [0, 0, 30]

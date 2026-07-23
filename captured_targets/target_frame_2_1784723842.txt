@@ -1,0 +1,4 @@
+=== HUMAN OPERATOR ALERT ===
+Detected Target Class: person
+Frame ID: 2
+Bounding Offset: [15.0, 0.0, 35.0]
