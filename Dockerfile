@@ -155,20 +155,20 @@ RUN cd /root/project && python3 demo_reject.py
 #                            with a bounded per-drone connect timeout so one
 #                            stuck connection can never hang the whole squad
 #   squad_main.py          -- full pipeline wiring, mirrors main.py
-COPY formation.py /root/project/formation.py
-COPY squad_schema.py /root/project/squad_schema.py
-COPY squad_validator.py /root/project/squad_validator.py
-COPY squad_interpreter.py /root/project/squad_interpreter.py
-COPY squad_executor.py /root/project/squad_executor.py
-COPY squad_main.py /root/project/squad_main.py
-COPY test_formation.py /root/project/test_formation.py
-COPY test_squad_validator.py /root/project/test_squad_validator.py
-COPY test_squad_interpreter.py /root/project/test_squad_interpreter.py
-COPY test_squad_executor.py /root/project/test_squad_executor.py
-COPY test_squad_main.py /root/project/test_squad_main.py
-COPY test_squad_fixtures.py /root/project/test_squad_fixtures.py
-COPY squad_demo_reject.py /root/project/squad_demo_reject.py
-COPY fixtures/ /root/project/fixtures/
+COPY challenge1_multi_agent_formations/formation.py /root/project/formation.py
+COPY challenge1_multi_agent_formations/squad_schema.py /root/project/squad_schema.py
+COPY challenge1_multi_agent_formations/squad_validator.py /root/project/squad_validator.py
+COPY challenge1_multi_agent_formations/squad_interpreter.py /root/project/squad_interpreter.py
+COPY challenge1_multi_agent_formations/squad_executor.py /root/project/squad_executor.py
+COPY challenge1_multi_agent_formations/squad_main.py /root/project/squad_main.py
+COPY challenge1_multi_agent_formations/test_formation.py /root/project/test_formation.py
+COPY challenge1_multi_agent_formations/test_squad_validator.py /root/project/test_squad_validator.py
+COPY challenge1_multi_agent_formations/test_squad_interpreter.py /root/project/test_squad_interpreter.py
+COPY challenge1_multi_agent_formations/test_squad_executor.py /root/project/test_squad_executor.py
+COPY challenge1_multi_agent_formations/test_squad_main.py /root/project/test_squad_main.py
+COPY challenge1_multi_agent_formations/test_squad_fixtures.py /root/project/test_squad_fixtures.py
+COPY challenge1_multi_agent_formations/squad_demo_reject.py /root/project/squad_demo_reject.py
+COPY challenge1_multi_agent_formations/fixtures/ /root/project/fixtures/
 
 # Every one of these tests is pure Python, mocked-LLM, or dry-run --
 # exactly like Day 2-4's tests -- so all of it is build-time safe with no
@@ -184,7 +184,7 @@ RUN cd /root/project \
     && python3 test_squad_fixtures.py \
     && python3 squad_demo_reject.py
 
-COPY fly_squad.sh /root/project/fly_squad.sh
+COPY challenge1_multi_agent_formations/fly_squad.sh /root/project/fly_squad.sh
 RUN chmod +x /root/project/fly_squad.sh
 
 # ---- Optional -- ROS 2 Humble + RViz2, for watching the squad in RViz -----
@@ -208,8 +208,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl gnupg lsb-
         ros-humble-ros-base ros-humble-rviz2 python3-colcon-common-extensions \
     && rm -rf /var/lib/apt/lists/*
 
-COPY formation_viz.py /root/project/formation_viz.py
-COPY rviz/ /root/project/rviz/
+COPY challenge1_multi_agent_formations/formation_viz.py /root/project/formation_viz.py
+COPY challenge1_multi_agent_formations/rviz/ /root/project/rviz/
 
 # Pull the local LLM model at build time so `docker run` doesn't need to
 # re-download it every time -- adds several GB to the image, but that's a
